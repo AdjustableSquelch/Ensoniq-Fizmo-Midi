@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Fizmo</title>
+
+	<!-- Bootstrap -->
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+	<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+	<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+	<!--[if lt IE 9]>
+	<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+	<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+	<![endif]-->
+
+	<style type="text/css">
+		.offset {margin-left: 8ex;}
+		.container {width: 94%;}
+	</style>
+</head>
+<body role="document">
+
+<!-- Fixed_navbar -->
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+	<div class="container">
+		<div class="navbar-header">
+			<a class="navbar-brand" href="#">Ensoniq Fizmo Midi Information Revision 1</a>
+		</div>
+		<div class="navbar-collapse collapse">
+			<ul class="nav navbar-nav">
+				<li class="active"><a href="#">Home</a></li>
+				<li><a href="https://github.com/AdjustableSquelch/Ensoniq-Fizmo-Midi">Github</a></li>
+			</ul>
+		</div><!--/.nav-collapse -->
+	</div>
+</div>
+
+<div class="container theme-showcase" role="main">
+	<p>&nbsp;</p>
+	<div class="page-header">
+		<h1>System Exclusive Message</h1>
+	</div>
+
+	<p>The Fizmo sysex implementation is similar to the <a href="http://www.fumph.com/ensoniq_mr/mrsysex.txt">Ensoniq MR-10 implementation</a>. Some text from here is borrowed from that page.</p>
+
+	<h2>4 to 5 Bulk SysEx Data Encoding</h2>
+
+	<p>Where specified, the Fizmo will encode/interpret a consecutive group of 4-bytes:</p>
+
+<pre>
+	Byte #0  b31b30b29b28b27b26b25b24
+	Byte #1  b23b22b21b20b19b18b17b16
+	Byte #2  b15b14b13b12b11b10b09b08
+	Byte #3  b07b06b05b04b03b02b01b00
+</pre>
+	<p>as the following 5 consecutive bytes sent over SysEx:</p>
+
+<pre>
+	Byte #0  0  b06b05b04b03b02b01b00
+	Byte #1  0  b13b12b11b10b09b08b07
+	Byte #2  0  b20b19b18b17b16b15b14
+	Byte #3  0  b27b26b25b24b23b22b21
+	Byte #4  0  0  0  0  b31b30b29b28
+</pre>
+	<h2>Device Inquiry</h2>
+	<div class="offset">
+	<h3>Device Inquiry Request</h3>
+	<p>The Fizo supports the MIDI Device Inquiry message which allows instruments and computers to ascertain the identity of the unit(s) to which they are connected via MIDI. The Fiz responds to the following Identity Request message by sending an Identity Reply message. The Fiz will respond to the inquiry if the channel information in the message contains either the current Device ID of the Fiz or the All Channel Broadcast code (7Fh).</p>
+
+<pre>
+	F0      System Exclusive Status Byte
+	7E      Non Real Time Message Code
+
+	nn      Device ID Number (0 to 127)
+	or
+	7F      All Channel Broadcast Code
+
+	06      General Information Message Code
+	01      Identity Request Message Code
+
+	F7      End of System Exclusive
+</pre>
+	<h3>Device Inquiry Response</h3>
+
+	<p>The is transmitted in response to an Identity Request message and differs slightly in format from the MR</p>
+
+<pre>
+	F0      System Exclusive Status Byte
+	7E      Non Real Time Message Code
+
+	06      General Information Message Code
+	nn      Device ID Number (0 to 127) [I think!]
+
+	02      Identity Reply Message Code
+
+	0F      Ensoniq Manufacturer's Code
+	11      Fizmo Family
+
+	00      In the MR spec these bytes talk about software
+	01      version. I've the last F/W update for the Fiz
+	00      so I assume this isn't changing!
+	00
+	00
+	00
+	00
+
+	F7      End of System Exclusive
+</pre>
+	</div>
+
+	<h2>Messages to/from the Fiz</h2>
+	<p>Sysex messages in this general format (apart from discovery), with a command code/response code and optionally data.</p>
+	<p>Response code is sent back from the Fiz with the high nibble set to 4. </p>
+	<pre>
+	F0      System Exclusive Status Byte
+	0F      Ensoniq Manufacturer Code
+	11      Fizmo Family ID Code
+	01      Sub ID
+	nn      Device ID Number (0 to 127)
+
+	cc      Request or Response Code
+				01  Request Patch Dump From Fizmo
+				41  Patch Dump as Requested
+
+				02  Send Patch Data To Fizmo
+				42  Patch Received OK
+
+				05  Parameter Change Request
+				45  Parameter Changed
+
+	(xxx)   Optional Data
+
+	F7      End of System Exclusive
+	</pre>
+
+
+
+	<h2>Patch Dumps</h2>
+	<div class="offset">
+	<h3>Request Patch Dump</h3>
+
+	<p>Request contents of a patch from the Fiz.</p>
+
+<pre>
+	F0      System Exclusive Status Byte
+	0F      Ensoniq Manufacturer Code
+	11      Fizmo Family ID Code
+	01      Sub ID
+	nn      Device ID Number (0 to 127)
+
+	01      Request Patch Dump From Fizmo
+	17      ?
+
+	pp      Patch Number 0x40 - 0x7f for internal patches, 00 for currently loaded patch (i.e. that we are editing on panel)
+	00
+
+	F7      End of System Exclusive
+</pre>
+
+	<h3>Patch Dump Request Response</h3>
+
+	<p>Sent from the Fiz</p>
+
+<pre>
+	F0      System Exclusive Status Byte
+	0F      Ensoniq Manufacturer Code
+	11      Fizmo Family ID Code
+	01      Sub ID
+
+	nn      Device ID Number (0 to 127)
+	41      Patch Dump as Requested
+
+	17      ??
+
+	pp      Patch Number
+	00
+
+	....	Patch Dump
+
+	f7
+</pre>
+		</div>
+
+
+
+	<h2>Parameter Packing</h2>
+
+	<p>This command will allow for a consecutive group of one to four bytes within a given data structure to be edited. When three or less bytes are specified the Fizmo expects the Parameter Value field to be bit ordered as if it was performing a full 32-bit (4-byte) parameter change. For example, when editing a two byte parameter, Byte #0 will occupy the bit range of b24-b31 while Byte #1 will occupy bits b16-b23. The remaining bits (b00-b15) in the parameter value field should be set to zero.</p>
+
+	<h2>Sound Parameter Change Request (Modified)</h2>
+
+<pre>
+	F0      System Exclusive Status Byte
+	0F      Ensoniq Manufacturer Code
+	11      Fizmo Family ID Code
+	01      Sub ID
+
+	nn      Device ID Number (0 to 127)
+	05      Parameter Change Request Command
+
+	01      Sound Program Parameter
+
+	ss      Sound Number (0-3)
+	00      Unused
+
+	02      Oscillator Parameter
+
+	nn      Oscillator (0-1)
+	00      Unused
+
+	bb      Parameter Offset - 0  b06b05b04b03b02b01b00
+	bb      Parameter Offset - 0  b13b12b11b10b09b08b07
+	bb      Parameter Offset - 0  b20b19b18b17b16b15b14
+	bb      Parameter Offset - 0  b27b26b25b24b23b22b21
+	0b      Parameter Offset - 0  0  0  0  b31b30b29b28
+
+	0b      Parameter Byte Size (1 to 4)
+	00
+	00
+	00
+	00
+
+	bb      Parameter Value  - 0  b06b05b04b03b02b01b00
+	bb      Parameter Value  - 0  b13b12b11b10b09b08b07
+	bb      Parameter Value  - 0  b20b19b18b17b16b15b14
+	bb      Parameter Value  - 0  b27b26b25b24b23b22b21
+	0b      Parameter Value  - 0  0  0  0  b31b30b29b28
+
+	F7      End of System Exclusive
+</pre>
+
+	<h2>Sound Editing Parameters</h2>
+
+	<table class="table table-striped table-bordered table-condensed">
+		<thead>
+			<tr>
+				<th>todo</th>
+				<th>todo</th>
+				<th>todo</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>todo</td>
+				<td>todo</td>
+				<td>todo</td>
+			</tr>
+		</tbody>
+
+	</table>
+
+
+</div>
+
+
+</body>
+</html>
