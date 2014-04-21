@@ -27,7 +27,7 @@
 <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
 	<div class="container">
 		<div class="navbar-header">
-			<a class="navbar-brand" href="#">Ensoniq Fizmo Midi Information Revision 1</a>
+			<a class="navbar-brand" href="#">Ensoniq Fizmo Midi Information Revision 2</a>
 		</div>
 		<div class="navbar-collapse collapse">
 			<ul class="nav navbar-nav">
@@ -190,8 +190,7 @@
 
 	<p>This command will allow for a consecutive group of one to four bytes within a given data structure to be edited. When three or less bytes are specified the Fizmo expects the Parameter Value field to be bit ordered as if it was performing a full 32-bit (4-byte) parameter change. For example, when editing a two byte parameter, Byte #0 will occupy the bit range of b24-b31 while Byte #1 will occupy bits b16-b23. The remaining bits (b00-b15) in the parameter value field should be set to zero.</p>
 
-	<h2>Sound Parameter Change Request (Modified)</h2>
-
+	<h2>Sound Parameter Change Request</h2>
 <pre>
 	F0      System Exclusive Status Byte
 	0F      Ensoniq Manufacturer Code
@@ -206,7 +205,8 @@
 	ss      Sound Number (0-3)
 	00      Unused
 
-	02      Oscillator Parameter
+	nn      01  Sound Common Parameter (i.e. applies to both OSC like name and pitch table)
+			02  Oscillator Parameter
 
 	nn      Oscillator (0-1)
 	00      Unused
@@ -231,6 +231,47 @@
 
 	F7      End of System Exclusive
 </pre>
+
+	<h2>Patch Common Parameter Change Request</h2>
+<pre>
+	F0      System Exclusive Status Byte
+	0F      Ensoniq Manufacturer Code
+	11      Fizmo Family ID Code
+	01      Sub ID
+
+	nn      Device ID Number (0 to 127)
+	05      Parameter Change Request Command
+
+	07      Sound Program Parameter
+
+	00      Unused
+	00
+	00
+	00
+	00
+
+	bb      Parameter Offset - 0  b06b05b04b03b02b01b00
+	bb      Parameter Offset - 0  b13b12b11b10b09b08b07
+	bb      Parameter Offset - 0  b20b19b18b17b16b15b14
+	bb      Parameter Offset - 0  b27b26b25b24b23b22b21
+	0b      Parameter Offset - 0  0  0  0  b31b30b29b28
+
+	0b      Parameter Byte Size (1 to 4)
+	00
+	00
+	00
+	00
+
+	bb      Parameter Value  - 0  b06b05b04b03b02b01b00
+	bb      Parameter Value  - 0  b13b12b11b10b09b08b07
+	bb      Parameter Value  - 0  b20b19b18b17b16b15b14
+	bb      Parameter Value  - 0  b27b26b25b24b23b22b21
+	0b      Parameter Value  - 0  0  0  0  b31b30b29b28
+
+	F7      End of System Exclusive
+</pre>
+
+
 
 	<h2>Sound Editing Parameters</h2>
 
